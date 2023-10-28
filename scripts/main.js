@@ -2,43 +2,25 @@
 const container = document.querySelector('.grid');
 const grid = [];
 let tracker = 0;
+// import neighborList from './neighbors.json';
 
 const input = document.querySelector('input');
 
 //* Figuring out how to Limit the Neighbors of a Given Tile
 const neighbors = {
-  'full-grass': {
-    north: ['north-coast-grass', 'north-desert-grass', 'north-forest-grass'],
-    east: ['east-grass-coast', 'east-forest-grass'],
-    south: ['south-coast-grass', 'south-desert-grass', 'south forest-grass'],
-    west: ['west-grass-coast'],
+  empty: {
+    north: ['center', 'up-right', 'up-down', 'up-left', 'up-right-down', 'up-right-left', 'up-down-left', 'right-down', 'right-left', 'right-down-left', 'down-left'],
+    east: ['center', 'up-right', 'up-down', 'up-left', 'up-right-down', 'up-right-left', 'up-down-left', 'right-down', 'right-left', 'right-down-left', 'down-left'],
+    south: ['center', 'up-right', 'up-down', 'up-left', 'up-right-down', 'up-right-left', 'up-down-left', 'right-down', 'right-left', 'right-down-left', 'down-left'],
+    west: ['center', 'up-right', 'up-down', 'up-left', 'up-right-down', 'up-right-left', 'up-down-left', 'right-down', 'right-left', 'right-down-left', 'down-left']
   },
-  'north-coast': {
-    north: [],
-    east: [],
-    south: [],
-    west: [],
-  },
-  'east-coast': {
-    north: [],
-    east: [],
-    south: [],
-    west: [],
-  },
-  'south-coast': {
-    north: [],
-    east: [],
-    south: [],
-    west: [],
-  },
-  'west-coast': {
-    north: [],
-    east: [],
-    south: [],
-    west: [],
-  },
+  center: {
+    north: ['center', 'up-down', 'up-right-down', 'up-down-left', 'right-down', 'right-down-left', 'down-left'],
+    east: ['center', 'up-left', 'up-right-left', 'up-down-left', 'right-left', 'right-down-left', 'down-left'],
+    south: ['center', 'up-right', 'up-down', 'up-left', 'up-right-down', 'up-right-left', 'up-down-left'],
+    west: ['center', 'up-left', 'up-right-left', 'up-down-left', 'right-left', 'right-down-left', 'down-left']
+  }
 }
-
 //* Initialize the Board/Map to a given number of tiles
 function init(totalTiles, rowLength) {
   // 850 fits near perfect on the macbook screen when safari is fullscreen with tabs, 875 if no tabs
@@ -46,7 +28,7 @@ function init(totalTiles, rowLength) {
     const newItem = document.createElement('div');
     // creating an item, "empty" class will represent an unknown tile
     newItem.classList.add('item', 'empty');
-    newItem.innerText = 87;
+    newItem.innerText = findNeighbors(newItem).north.length;
     container.appendChild(newItem);
 
     // this section exists to allow each row to contain it's own items
@@ -71,9 +53,20 @@ function seedTile() {
   return { element: grid[randomX][randomY], x: randomX, y: randomY }
 }
 
+function formatTile(tile) {
+  let row, col;
+  grid.forEach((r, i) => r.includes(tile) ? row = i : null)
+  // console.log('row', row)
+  grid[row].forEach((c, i) => c === tile ? col = i : null)
+  console.log({ element: tile, x: row, y: col });
+  return { element: tile, x: row, y: col };
+}
+
 // look for neighbors in a given element might need expanded or removed if it doesnt help legibility
 function findNeighbors(element) {
-  return neighbors[element.classList[1]]
+  // console.log(element)
+  if(element.classList.length > 0)
+    return neighbors[element.classList[1] ? element.classList[1] : 'empty']
 }
 
 function limitSwitch(tile, axis, direction) {
@@ -90,32 +83,12 @@ function limitSwitch(tile, axis, direction) {
       return tile.y + 1 > grid[tile.x].length - 1 ? 500 : tile.y + 1;
     }
   }
-
   return 500;
 }
 
-//* Load the Page
-function load(totalTiles, rowLength) {
-  //! edit these parameters to effect the total number of tiles and the row length
-  init(totalTiles, rowLength);
-  console.log(grid);
-  console.log(random(grid[0].length))
-  // items are currently being stored in the order of [column][row]
-  // can also think of it as reading the 'x' position before 'y'
-  const starterTile = seedTile();
-
-  // this section will change in order to more efficiently change not only the starter tile but also each generatively created tile
-  starterTile.element.innerText = 0;
-  starterTile.element.classList.add('full-grass');
-  starterTile.element.classList.remove('empty');
-
-
-  //! clump all of this together and make it so that this runs in order of each tile affected, and updated each tile to only contain the allotted items for a given tile. probably instead of having a given tile reference a database maybe each tile should instead inherently contain a list of all allowed tiles and when one is changed near it we just reduce the options until either the last remaining item exists within that updated tile or if there is a standstill then we select randomly one of the tiles with the lowest "evaluation" score and decide randomly what it is that tile should be and then re-evaluate the tiles from there. ideally the "wave" of checks should fizzle out fairly quickly, within one or two tiles, before it has not enough information to update a tile again. this might also only need to affect or check tiles that are adjacent to currently filled tiles if that makes it easier to calculate and reduce load times
-  const validNeighbors = findNeighbors(starterTile.element);
-  console.log(validNeighbors);
-
-  Object.keys(validNeighbors).forEach(direction => {
-    let selectedTile, selectedX, selectedY;
+//! why does this need to be in it's own function, cant i just add all of this into the same function instead of needing to loop over the items 4 times and just run and check each direction in a single function call without needing a switch statement since i will realistically be updateing all 4 at the same time most likely (citation needed)
+function updateValidOptions(direction, starterTile, validNeighbors) {
+  let selectedTile, selectedX, selectedY;
     switch(direction) {
       case 'north':
         selectedY = limitSwitch(starterTile, 'y', 'up');
@@ -123,6 +96,11 @@ function load(totalTiles, rowLength) {
           break;
         selectedTile = grid[starterTile.x][selectedY]
         selectedTile.innerText = validNeighbors['north'].length;
+        // console.log(selectedTile)
+        // updateValidOptions('north', formatTile(selectedTile), findNeighbors(selectedTile));
+        // updateValidOptions('east', formatTile(selectedTile), findNeighbors(selectedTile));
+        // updateValidOptions('south', formatTile(selectedTile), findNeighbors(selectedTile));
+        // updateValidOptions('west', formatTile(selectedTile), findNeighbors(selectedTile));
         break;
       case 'east':
         selectedX = limitSwitch(starterTile, 'x', 'right');
@@ -130,6 +108,11 @@ function load(totalTiles, rowLength) {
           break;
         selectedTile = grid[selectedX][starterTile.y];
         selectedTile.innerText = validNeighbors['east'].length;
+        //! this is way too heavy for each to recursively run on change. this also means that 
+        // updateValidOptions('north', formatTile(selectedTile), findNeighbors(selectedTile));
+        // updateValidOptions('east', formatTile(selectedTile), findNeighbors(selectedTile));
+        // updateValidOptions('south', formatTile(selectedTile), findNeighbors(selectedTile));
+        // updateValidOptions('west', formatTile(selectedTile), findNeighbors(selectedTile));
         break;
       case 'south':
         selectedY = limitSwitch(starterTile, 'y', 'down');
@@ -137,6 +120,10 @@ function load(totalTiles, rowLength) {
           break;
         selectedTile = grid[starterTile.x][selectedY];
         selectedTile.innerText = validNeighbors['south'].length;
+        // updateValidOptions('north', formatTile(selectedTile), findNeighbors(selectedTile));
+        // updateValidOptions('east', formatTile(selectedTile), findNeighbors(selectedTile));
+        // updateValidOptions('south', formatTile(selectedTile), findNeighbors(selectedTile));
+        // updateValidOptions('west', formatTile(selectedTile), findNeighbors(selectedTile));
         break;
       case 'west':
         selectedX = limitSwitch(starterTile, 'x', 'left');
@@ -144,8 +131,36 @@ function load(totalTiles, rowLength) {
           break;
         selectedTile = grid[selectedX][starterTile.y];
         selectedTile.innerText = validNeighbors['west'].length;
+        // updateValidOptions('north', formatTile(selectedTile), findNeighbors(selectedTile));
+        // updateValidOptions('east', formatTile(selectedTile), findNeighbors(selectedTile));
+        // updateValidOptions('south', formatTile(selectedTile), findNeighbors(selectedTile));
+        // updateValidOptions('west', formatTile(selectedTile), findNeighbors(selectedTile));
         break;
     }
+}
+
+//* Load the Page
+function load(totalTiles, rowLength) {
+  //! edit these parameters to effect the total number of tiles and the row length
+  init(totalTiles, rowLength);
+  // console.log(grid);
+  // console.log(random(grid[0].length))
+  // items are currently being stored in the order of [column][row]
+  // can also think of it as reading the 'x' position before 'y'
+  const starterTile = seedTile();
+
+  // this section will change in order to more efficiently change not only the starter tile but also each generatively created tile
+  starterTile.element.innerText = 0;
+  starterTile.element.classList.add('center');
+  starterTile.element.classList.remove('empty');
+
+
+  //! clump all of this together and make it so that this runs in order of each tile affected, and updated each tile to only contain the allotted items for a given tile. probably instead of having a given tile reference a database maybe each tile should instead inherently contain a list of all allowed tiles and when one is changed near it we just reduce the options until either the last remaining item exists within that updated tile or if there is a standstill then we select randomly one of the tiles with the lowest "evaluation" score and decide randomly what it is that tile should be and then re-evaluate the tiles from there. ideally the "wave" of checks should fizzle out fairly quickly, within one or two tiles, before it has not enough information to update a tile again. this might also only need to affect or check tiles that are adjacent to currently filled tiles if that makes it easier to calculate and reduce load times
+  const validNeighbors = findNeighbors(starterTile.element);
+  // console.log(validNeighbors);
+
+  Object.keys(validNeighbors).forEach(direction => {
+    updateValidOptions(direction, starterTile, validNeighbors);
   })
 }
 
@@ -153,8 +168,15 @@ window.onload = () => load(875, 24);
 
 window.addEventListener('keyup', e => {
   e.preventDefault()
+  // console.log(e)
   container.innerHTML = '';
   while(grid[0])
     grid.pop();
   load(875, 24);
 });
+
+/*
+  TODO
+  - add buttons to undo and redo movements of the starter tile, this will be useful for debugging corners and edges
+  - should just be an array of positions to cycle between and index
+*/

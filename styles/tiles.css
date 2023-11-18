@@ -2,6 +2,46 @@
   background-image: url('../assets/center.png');
 }
 
+.down-left {
+  background-image: url('../assets/down-left.png');
+}
+
+.right-down-left {
+  background-image: url('../assets/right-down-left.png');
+}
+
+.right-down {
+  background-image: url('../assets/right-down.png');
+}
+
+.right-left {
+  background-image: url('../assets/right-left.png');
+}
+
+.up-down-left {
+  background-image: url('../assets/up-down-left.png');
+}
+
+.up-down {
+  background-image: url('../assets/up-down.png');
+}
+
+.up-left {
+  background-image: url('../assets/up-left.png');
+}
+
+.up-right-down {
+  background-image: url('../assets/up-right-down.png');
+}
+
+.up-right-left {
+  background-image: url('../assets/up-right-left.png');
+}
+
+.up-right {
+  background-image: url('../assets/up-right.png');
+}
+
 .empty {
   background-color: black;
 }
